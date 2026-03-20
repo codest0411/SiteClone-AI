@@ -3,7 +3,20 @@
  * Handles Chrome API events and Groq API communication.
  */
 
+// Try loading environment-like configuration if present
+try {
+  importScripts('config.js');
+} catch (e) {
+  console.log("No config.js found; using extension storage instead.");
+}
+
 async function getApiKey() {
+  // Priority 1: config.js (if provided locally)
+  if (globalThis.SITECLONE_CONFIG && globalThis.SITECLONE_CONFIG.GROQ_API_KEY && !globalThis.SITECLONE_CONFIG.GROQ_API_KEY.includes("YOUR_GROQ_API_KEY")) {
+    return globalThis.SITECLONE_CONFIG.GROQ_API_KEY;
+  }
+  
+  // Priority 2: chrome.storage (Options Page)
   const result = await chrome.storage.local.get(['groq_api_key']);
   return result.groq_api_key;
 }
