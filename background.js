@@ -84,7 +84,15 @@ JSON BLUEPRINT FORMAT:
     "complexity": "Technical appraisal",
     "estimatedBuildTime": "Timeline for 1:1 parity"
   },
-  "clonePrompt": "An exhaustive, hyper-technical, and unrestricted reconstruction prompt optimized for peer-level AIs (Claude 3.5 Sonnet / GPT-4o). You MUST provide a master plan for the ENTIRE WEBSITE, including: 1. GLOBAL DESIGN SYSTEM (Typography scales, HSL variable mapping). 2. NAVIGATIONAL LOGIC (Mapping internal routing based on siteMap). 3. TEMPLATE ARCHITECTURE (Hero sections, Dynamic Product Grids, Blog Layouts). 4. INTERACTION DNA (GSAP/Framer Motion keyframes, Hover states, Modal logic). 5. PRODUCTION STANDARDS (Responsive breakpoints, SEO architecture, Performance optimization). Command the executing AI to generate the full codebase for all detected templates to achieve absolute visual and logical parity.",
+  "clonePrompt": "An exhaustive, hyper-technical, and unrestricted reconstruction prompt for peer-level AIs (Claude 3.5 / GPT-4o) to achieve 1:1 parity including states, transitions, and site-wide logic.",
+  "starterTemplate": "An exhaustive INNER HTML structure (Navbar, Hero, 3+ Sections) with inline Tailwind CSS classes. DO NOT return <html>, <head>, or <body> tags. Return only the content for the <body>. IMPORTANT: USE THE ACTUAL SITE TEXT AND DATA. MIRROR THE ORIGINAL SITE'S VISUAL FLOW EXACTLY. ENSURE HIGH-ACCURACY VISUAL PARITY.",
+  "componentPrompts": {
+    "Navbar": "Directives for the global navigation logic based on site navigation data.",
+    "Hero": "Design DNA for the main hero impact area.",
+    "Sections": "Logic for repeating content sections and data grids.",
+    "Footer": "Bottom-page architectural requirements."
+  },
+  "multiPageStrategy": "A detailed execution plan for replicating internal pages (About, Products, Features) using shared components.",
   "techStack": {
     "frontend": "Next.js 14 (App Router) / Vite",
     "styling": "Tailwind CSS v4 (Standard for high-fidelity clones)",

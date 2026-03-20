@@ -1,7 +1,7 @@
 <div align="center">
 
 <br/>
-
+<pre align="center">
 ```
   ██████╗ ██╗████████╗███████╗ ██████╗██╗      ██████╗ ███╗   ██╗███████╗     █████╗ ██╗
  ██╔════╝ ██║╚══██╔══╝██╔════╝██╔════╝██║     ██╔═══██╗████╗  ██║██╔════╝    ██╔══██╗██║
@@ -10,7 +10,7 @@
  ██████╔╝ ██║   ██║   ███████╗╚██████╗███████╗╚██████╔╝██║ ╚████║███████╗    ██║  ██║██║
  ╚═════╝  ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚══════╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝   ╚═╝  ╚═╝╚═╝
 ```
-
+</pre>
 ### 🔍 Analyze any website. Generate a perfect clone prompt. Build it instantly.
 
 <br/>
@@ -19,16 +19,16 @@
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-00C853?style=for-the-badge&logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/mv3/)
 [![Groq API](https://img.shields.io/badge/Powered%20by-Groq%20AI-FF6D00?style=for-the-badge&logo=lightning&logoColor=white)](https://groq.com)
 [![Llama 3.3](https://img.shields.io/badge/Model-Llama%203.3%2070B-7C3AED?style=for-the-badge&logo=meta&logoColor=white)](https://groq.com)
-[![Version](https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge)](https://github.com/codest0411/SiteClone-AI/releases)
+[![Version](https://img.shields.io/badge/Version-4.0.0-blue?style=for-the-badge)](https://github.com/codest0411/SiteClone-AI/releases)
 [![License MIT](https://img.shields.io/badge/License-MIT-E53E3E?style=for-the-badge)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-38A169?style=for-the-badge)](CONTRIBUTING.md)
 [![Stars](https://img.shields.io/github/stars/codest0411/SiteClone-AI?style=for-the-badge&color=yellow)](https://github.com/codest0411/SiteClone-AI/stargazers)
 
 <br/>
 
-> **Visit any website → Click the extension → Get a production-ready AI prompt to rebuild it from scratch.**
+> **Visit any website → Click the extension → Export a 1:1 Production-Ready Project Boilerplate.**
 >
-> Colors · Fonts · Layout · Components · Tech Stack · Roadmap — All in one side panel.
+> Deep DNA Analysis · Full Project ZIP Export · Multi-Page Logic · Standardized Project Structure.
 
 <br/>
 
@@ -130,18 +130,25 @@
 
 ```
 ╔═══════════════════════════════════════════════════════════════════════════╗
-║                          CORE CAPABILITIES                                ║
+║                      V4.0 "PERFECT CLONE" UPDATE                          ║
 ╠════════════════╦══════════════════════════════════════════════════════════╣
-║  🔍 Analyze    ║  Deep DOM scan — layout, colors, fonts, components      ║
-║  🤖 Generate   ║  AI-powered clone prompt (300–400 words, production)    ║
-║  ⚙️  Stack     ║  Exact tech stack tailored to that specific site        ║
-║  🗺️  Roadmap   ║  Step-by-step build guide with realistic time estimates ║
-║  🎨 Palette    ║  Visual color swatches with hex codes, extracted live   ║
-║  📋 Copy       ║  One-click copy — paste straight into Claude/ChatGPT    ║
-║  ⚡ Speed      ║  Full analysis in under 5 seconds (Groq is blazing fast)║
-║  🌐 Universal  ║  Works on every website — e-comm, SaaS, blogs, all     ║
-║  🔒 Private    ║  100% local DOM read — no raw HTML ever leaves browser  ║
-║  🎯 Accurate   ║  Detects 13+ component types + 6 CSS frameworks        ║
+║  🔍 Analyze    ║  Deep DOM scan — layout, colors, fonts, components       ║
+║  🤖 Generate   ║  AI-powered clone prompt (300–400 words, production)     ║
+║  ⚙️  Stack     ║  Exact tech stack tailored to that specific site         ║
+║  🗺️  Roadmap   ║  Step-by-step build guide with realistic time estimates  ║
+║  🎨 Palette    ║  Visual color swatches with hex codes, extracted live    ║
+║  📋 Copy       ║  One-click copy — paste straight into Claude/ChatGPT     ║
+║  ⚡ Speed      ║  Full analysis in under 5 seconds (Groq is blazing fast) ║
+║  🌐 Universal  ║  Works on every website — e-comm, SaaS, blogs, all       ║
+║  🔒 Private    ║  100% local DOM read — no raw HTML ever leaves browser   ║
+║  🎯 Accurate   ║  Detects 13+ component types + 6 CSS frameworks          ║
+║  📂 Full ZIP   ║  Export a complete project folder (README, HTML, CSS)    ║    
+║  🧬 Deep DNA   ║  1:1 Mirroring of Colors, Fonts, and Spacing scales      ║
+║  📄 Multi-Page ║  Strategic logic for mapping sub-page reconstruction     ║
+║  ⚡ Live Start ║  Instant styled HTML starters with Tailwind CSS CDN      ║
+║  🤖 AI-to-AI   ║  Expert prompting for Claude 3.5 Sonnet & GPT-4o         ║
+║  🛠️  Dev Ready ║  Includes tailwind.config.js and SITEMAP profiling       ║
+║  🔒 Unbreakable║  Robust error handling & case-insensitive AI mapping     ║
 ╚════════════════╩══════════════════════════════════════════════════════════╝
 ```
 
@@ -469,15 +476,36 @@ model: "llama-3.3-70b-versatile",    // ← default (best quality)
 
 ### Customizing the Output
 
-Edit the `SYSTEM_PROMPT` constant in `background.js` to tailor what the AI generates:
+Edit the `SYSTEM_PROM[![Version](https://img.shields.io/badge/Version-4.0.0-blue?style=for-the-badge)](https://github.com/codest0411/SiteClone-AI/releases)
+[![License MIT](https://img.shields.io/badge/License-MIT-E53E3E?style=for-the-badge)](LICENSE)
 
-```javascript
-// Examples of customizations you can add to the system prompt:
-"Always recommend React Native if a mobile app version is likely"
-"Include an SEO checklist in every roadmap"
-"Prefer open-source tools with no vendor lock-in"
-"Always include a Docker setup step in the roadmap"
-"Suggest Supabase instead of Firebase for the database"
+<br/>
+
+> **Visit any website → Click the extension → Export a 1:1 Production-Ready Project Boilerplate.**
+>
+> Deep DNA Analysis · Full Project ZIP Export · Multi-Page Logic · Standardized Project Structure.
+
+<br/>
+
+---
+
+## ✨ Features
+
+<br/>
+
+```
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                      V4.0 "PERFECT CLONE" UPDATE                          ║
+╠════════════════╦══════════════════════════════════════════════════════════╣
+║  📂 Full ZIP   ║  Export a complete project folder (README, HTML, CSS)   ║
+║  🧬 Deep DNA   ║  1:1 Mirroring of Colors, Fonts, and Spacing scales     ║
+║  📄 Multi-Page ║  Strategic logic for mapping sub-page reconstruction    ║
+║  ⚡ Live Start ║  Instant styled HTML starters with Tailwind CSS CDN     ║
+║  🤖 AI-to-AI   ║  Expert prompting for Claude 3.5 Sonnet & GPT-4o        ║
+║  🛠️  Dev Ready ║  Includes tailwind.config.js and SITEMAP profiling      ║
+║  🔒 Unbreakable║  Robust error handling & case-insensitive AI mapping     ║
+╚════════════════╩══════════════════════════════════════════════════════════╝
+
 ```
 
 <br/>
@@ -633,29 +661,17 @@ Edit the `SYSTEM_PROMPT` constant in `background.js` to tailor what the AI gener
   VERSION    FEATURE                                       STATUS
   ─────────────────────────────────────────────────────────────────────
   v1.0.0     Core DOM extraction engine                     ✅  Shipped
-  v1.0.0     Groq / Llama 3.3 70B integration               ✅  Shipped
-  v1.0.0     Chrome Side Panel UI (dark theme)               ✅  Shipped
-  v1.0.0     Clone prompt generation (300–400 words)         ✅  Shipped
-  v1.0.0     Tech stack recommendation                       ✅  Shipped
-  v1.0.0     Step-by-step build roadmap (8 steps)            ✅  Shipped
-  v1.0.0     Color palette swatches with hex codes           ✅  Shipped
-  v1.0.0     One-click copy to clipboard                     ✅  Shipped
+  v2.0.0     V3 Design System & Satin UI                    ✅  Shipped
+  v3.0.0     "Architectural Realism" AI Persona             ✅  Shipped
+  v4.0.0     Full Project ZIP Export (.zip)                 ✅  Shipped
+  v4.0.0     Multi-Page Blueprint Strategy                  ✅  Shipped
+  v4.0.0     Component Logic Extraction (.txt)              ✅  Shipped
+  v4.0.0     Unbreakable "Zero-Fail" Engine                 ✅  Shipped
   ─────────────────────────────────────────────────────────────────────
-  v1.1.0     Save & compare up to 5 analyzed sites           🔨  Building
-  v1.1.0     Export prompt as .txt / .md file                🔨  Building
-  v1.1.0     Custom prompt templates (choose your style)     📋  Planned
-  v1.1.0     Refresh / re-analyze button                     📋  Planned
-  ─────────────────────────────────────────────────────────────────────
-  v1.2.0     Multi-model: Claude API + GPT-4o support        📋  Planned
-  v1.2.0     Screenshot-based analysis (Vision API)          📋  Planned
-  v1.2.0     Shareable prompt links (public URL)             📋  Planned
-  v1.2.0     Firefox extension port (MV3)                    📋  Planned
-  ─────────────────────────────────────────────────────────────────────
-  v2.0.0     Auto-generate full starter GitHub repo          💡  Idea
-  v2.0.0     Component-level scan (hover any element)        💡  Idea
-  v2.0.0     Figma frame export from analysis                💡  Idea
-  v2.0.0     AI-generated Tailwind config from palette       💡  Idea
-  v2.0.0     Chrome Web Store public listing                 💡  Idea
+  v4.1.0     Save & compare analyzed sites                  📋  Planned
+  v4.2.0     Claude 3.5 & GPT-4o Official Support           📋  Planned
+  v5.0.0     Auto-generate full React/Vue starters          💡  Idea
+  v5.0.0     Chrome Web Store Public Listing                💡  Idea
   ─────────────────────────────────────────────────────────────────────
 ```
 
