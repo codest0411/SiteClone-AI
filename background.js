@@ -105,7 +105,7 @@ async function generateClonePrompt(data, apiKey) {
   "colorPalette": ["#hex1", "#hex2", "#hex3", "#hex4"],
   "fonts": ["Font 1", "Font 2"]
 }
-Return ONLY valid JSON. No markdown, no explanation.`;
+Return ONLY valid JSON. No markdown code blocks, no explanation, no conversational text. The response must start with '{' and end with '}'. If you fail to provide valid JSON, a developer might die.`;
 
   try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -131,15 +131,32 @@ Return ONLY valid JSON. No markdown, no explanation.`;
     }
 
     const json = await response.json();
-    const content = json.choices[0].message.content;
+    let content = json.choices[0].message.content;
     
     try {
-      // Clean content if it contains markdown formatting
-      const cleanedContent = content.trim().replace(/^```json/, '').replace(/```$/, '').trim();
-      return JSON.parse(cleanedContent);
+      // Robust JSON extraction: look for the first { and the last }
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        content = jsonMatch[0];
+      }
+      
+      // Additional cleaning for escaped characters or hidden garbage
+      const cleaned = content.trim()
+        .replace(/^```json/, '')
+        .replace(/```$/, '')
+        .trim();
+        
+      return JSON.parse(cleaned);
     } catch (parseErr) {
-      console.error("JSON parse error:", parseErr, content);
-      throw new Error("Failed to parse AI response. Retrying may help.");
+      console.error("Manual parse failed. Raw content:", content);
+      
+      // Final attempt: fallback to a more aggressive clean
+      try {
+        const aggressiveClean = content.substring(content.indexOf('{'), content.lastIndexOf('}') + 1);
+        return JSON.parse(aggressiveClean);
+      } catch (e) {
+        throw new Error("AI returned invalid JSON. Try analyzing again or check your API key.");
+      }
     }
   } catch (error) {
     console.error("Groq API error:", error);
