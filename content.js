@@ -129,6 +129,10 @@ function rgbToHex(rgb) {
 
 // Listen for messages from background/panel
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "PING") {
+    sendResponse({ status: "alive" });
+    return true;
+  }
   if (request.action === "EXTRACT_DATA") {
     sendResponse(extractData());
   }

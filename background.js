@@ -29,22 +29,21 @@ chrome.runtime.onInstalled.addListener(() => {
 // Listener for messages
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "GET_PAGE_DATA") {
-    getCurrentTab().then(tab => {
-      if (!tab) {
-        sendResponse({ error: "No active tab found." });
+    ensureContentScript().then(({ tabId, error }) => {
+      if (error) {
+        sendResponse({ error });
         return;
       }
       
-      // Inject logic if not already present or just message the content script
-      chrome.tabs.sendMessage(tab.id, { action: "EXTRACT_DATA" }, (response) => {
+      chrome.tabs.sendMessage(tabId, { action: "EXTRACT_DATA" }, (response) => {
         if (chrome.runtime.lastError) {
-          // Fallback: manually execute script if content script isn't loaded (e.g., restricted URLs)
-          sendResponse({ error: "Could not analyze this page (restricted site or script blocked)." });
+          sendResponse({ error: "Could not communicate with page handler. Try refreshing the page." });
         } else {
           sendResponse({ data: response });
         }
       });
-    });
+    }).catch(err => sendResponse({ error: err.message }));
+    
     return true; // Keep channel open
   }
 
@@ -65,6 +64,34 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Keep channel open
   }
 });
+
+async function ensureContentScript() {
+  const tab = await getCurrentTab();
+  if (!tab) throw new Error("No active tab found.");
+  if (!tab.url || tab.url.startsWith("chrome://") || tab.url.startsWith("edge://") || tab.url.startsWith("https://chrome.google.com")) {
+    throw new Error("Cannot analyze restricted browser pages.");
+  }
+
+  try {
+    // Ping the content script to see if it's there
+    await chrome.tabs.sendMessage(tab.id, { action: "PING" });
+    return { tabId: tab.id };
+  } catch (e) {
+    // Content script not present, inject it on the fly
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ["content.js"]
+      });
+      // Wait for a tiny bit for the script to load
+      await new Promise(r => setTimeout(r, 100));
+      return { tabId: tab.id };
+    } catch (err) {
+      console.error("Injection failed:", err);
+      return { error: "Failed to inject analysis script. Restricted or untrusted site." };
+    }
+  }
+}
 
 async function getCurrentTab() {
   const queryOptions = { active: true, lastFocusedWindow: true };
@@ -121,7 +148,7 @@ Return ONLY valid JSON. No markdown code blocks, no explanation, no conversation
           { role: "user", content: JSON.stringify(data) }
         ],
         temperature: 0.7,
-        max_tokens: 2000
+        max_tokens: 4000
       })
     });
 
