@@ -3,8 +3,10 @@
  * Handles Chrome API events and Groq API communication.
  */
 
-// Replace with your Groq API Key
-const GROQ_API_KEY = "YOUR_GROQ_API_KEY_HERE";
+async function getApiKey() {
+  const result = await chrome.storage.local.get(['groq_api_key']);
+  return result.groq_api_key;
+}
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
@@ -36,14 +38,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "GENERATE_PROMPT") {
     const extractedData = request.data;
     
-    if (!GROQ_API_KEY || GROQ_API_KEY.includes("YOUR_GROQ_API_KEY")) {
-      sendResponse({ error: "Add your Groq API key in background.js" });
-      return true;
-    }
+    getApiKey().then(key => {
+      if (!key) {
+        sendResponse({ error: "No API Key found. Please add your Groq API key in the extension options." });
+        return;
+      }
 
-    generateClonePrompt(extractedData)
-      .then(response => sendResponse({ result: response }))
-      .catch(error => sendResponse({ error: error.message }));
+      generateClonePrompt(extractedData, key)
+        .then(response => sendResponse({ result: response }))
+        .catch(error => sendResponse({ error: error.message }));
+    });
       
     return true; // Keep channel open
   }
@@ -55,7 +59,7 @@ async function getCurrentTab() {
   return tab;
 }
 
-async function generateClonePrompt(data) {
+async function generateClonePrompt(data, apiKey) {
   const SYSTEM_PROMPT = `You are a senior frontend architect. Given extracted website data, generate a response in this EXACT JSON format:
 {
   "summary": {
@@ -95,7 +99,7 @@ Return ONLY valid JSON. No markdown, no explanation.`;
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${GROQ_API_KEY}`
+        "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",

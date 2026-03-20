@@ -83,7 +83,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function showStatus(msg) {
     if (msg) {
-      statusMsg.textContent = msg;
+      if (msg.includes('extension options')) {
+        statusMsg.innerHTML = `${msg} <br><a href="#" id="open-options" style="color: #7c3aed; text-decoration: underline;">Open Options</a>`;
+        document.getElementById('open-options').addEventListener('click', (e) => {
+          e.preventDefault();
+          chrome.runtime.openOptionsPage();
+        });
+      } else {
+        statusMsg.textContent = msg;
+      }
       statusMsg.classList.remove('hidden');
     } else {
       statusMsg.classList.add('hidden');
