@@ -2,6 +2,7 @@
   "manifest_version": 3,
   "name": "SiteClone-AI",
   "version": "1.0",
+  "author": "codest0411 (https://github.com/codest0411)",
   "description": "Analyze any website and generate a detailed clone prompt and tech stack roadmap.",
   "permissions": [
     "activeTab",

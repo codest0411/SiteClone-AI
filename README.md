@@ -32,5 +32,8 @@ Get your key from [Groq Console](https://console.groq.com/keys).
 2. Enable **Developer mode**.
 3. Click **Load unpacked** and select the extension folder.
 
-## 📜 License
-MIT
+## 📜 License & Copyright
+This project is licensed under the **MIT License**.  
+Copyright (c) 2026 **codest0411** ([https://github.com/codest0411](https://github.com/codest0411)).  
+All rights reserved.  
+Check the `LICENSE` file for more details.
