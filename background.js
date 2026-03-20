@@ -11,12 +11,9 @@ try {
 }
 
 async function getApiKey() {
-  // Priority 1: config.js (if provided locally)
   if (globalThis.SITECLONE_CONFIG && globalThis.SITECLONE_CONFIG.GROQ_API_KEY && !globalThis.SITECLONE_CONFIG.GROQ_API_KEY.includes("YOUR_GROQ_API_KEY")) {
     return globalThis.SITECLONE_CONFIG.GROQ_API_KEY;
   }
-  
-  // Priority 2: chrome.storage (Options Page)
   const result = await chrome.storage.local.get(['groq_api_key']);
   return result.groq_api_key;
 }
@@ -26,167 +23,124 @@ chrome.runtime.onInstalled.addListener(() => {
     .catch((error) => console.error(error));
 });
 
-// Listener for messages
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "GET_PAGE_DATA") {
     ensureContentScript().then(({ tabId, error }) => {
-      if (error) {
-        sendResponse({ error });
-        return;
-      }
-      
+      if (error) { sendResponse({ error }); return; }
       chrome.tabs.sendMessage(tabId, { action: "EXTRACT_DATA" }, (response) => {
         if (chrome.runtime.lastError) {
-          sendResponse({ error: "Could not communicate with page handler. Try refreshing the page." });
+          sendResponse({ error: "Could not communicate with page handler." });
         } else {
           sendResponse({ data: response });
         }
       });
     }).catch(err => sendResponse({ error: err.message }));
-    
-    return true; // Keep channel open
+    return true;
   }
 
   if (request.action === "GENERATE_PROMPT") {
-    const extractedData = request.data;
-    
     getApiKey().then(key => {
-      if (!key) {
-        sendResponse({ error: "No API Key found. Please add your Groq API key in the extension options." });
-        return;
-      }
-
-      generateClonePrompt(extractedData, key)
+      if (!key) { sendResponse({ error: "No API Key found." }); return; }
+      generateClonePrompt(request.data, key)
         .then(response => sendResponse({ result: response }))
         .catch(error => sendResponse({ error: error.message }));
     });
-      
-    return true; // Keep channel open
+    return true;
   }
 });
 
 async function ensureContentScript() {
-  const tab = await getCurrentTab();
+  const queryOptions = { active: true, lastFocusedWindow: true };
+  const [tab] = await chrome.tabs.query(queryOptions);
   if (!tab) throw new Error("No active tab found.");
-  if (!tab.url || tab.url.startsWith("chrome://") || tab.url.startsWith("edge://") || tab.url.startsWith("https://chrome.google.com")) {
-    throw new Error("Cannot analyze restricted browser pages.");
+  if (!tab.url || tab.url.startsWith("chrome://") || tab.url.startsWith("edge://")) {
+    throw new Error("Restricted browser page.");
   }
 
   try {
-    // Ping the content script to see if it's there
     await chrome.tabs.sendMessage(tab.id, { action: "PING" });
     return { tabId: tab.id };
   } catch (e) {
-    // Content script not present, inject it on the fly
     try {
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: ["content.js"]
-      });
-      // Wait for a tiny bit for the script to load
+      await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["content.js"] });
       await new Promise(r => setTimeout(r, 100));
       return { tabId: tab.id };
     } catch (err) {
-      console.error("Injection failed:", err);
-      return { error: "Failed to inject analysis script. Restricted or untrusted site." };
+      return { error: "Failed to inject analysis script." };
     }
   }
-}
-
-async function getCurrentTab() {
-  const queryOptions = { active: true, lastFocusedWindow: true };
-  const [tab] = await chrome.tabs.query(queryOptions);
-  return tab;
 }
 
 async function generateClonePrompt(data, apiKey) {
-  const SYSTEM_PROMPT = `You are a senior frontend architect. Given extracted website data, generate a response in this EXACT JSON format:
+  const SYSTEM_PROMPT = `You are a Senior Web Architect and Realism Expert. Your objective is to deconstruct a website's DNA and provide a high-fidelity "AI-to-AI" blueprint for an identical, production-ready clone.
+
+CONTEXT: Analyze the provided metadata, page structure, and 'siteArchitecture' link mapping to deduce the global design system of the entire domain.
+
+JSON BLUEPRINT FORMAT:
 {
   "summary": {
-    "siteType": "E-commerce / Portfolio / SaaS / Blog / etc.",
-    "designStyle": "Minimalist / Bold / Corporate / Playful / etc.",
-    "complexity": "Simple / Medium / Complex",
-    "estimatedBuildTime": "X days"
+    "siteType": "Architectural Tier (e.g. Enterprise E-commerce, High-End Portfolio)",
+    "designStyle": "Visual aesthetic deep-dive (e.g. Minimalist Neo-Grotseque with high-contrast motion)",
+    "complexity": "Technical appraisal",
+    "estimatedBuildTime": "Timeline for 1:1 parity"
   },
-  "clonePrompt": "A single detailed paragraph prompt (300-400 words) that a developer can paste into an AI to build this exact website. Include: layout description, all sections in order, color palette, typography, animations, responsive behavior, interactions, and any special features detected.",
+  "clonePrompt": "An exhaustive, hyper-technical, and unrestricted reconstruction prompt optimized for peer-level AIs (Claude 3.5 Sonnet / GPT-4o). You MUST provide a master plan for the ENTIRE WEBSITE, including: 1. GLOBAL DESIGN SYSTEM (Typography scales, HSL variable mapping). 2. NAVIGATIONAL LOGIC (Mapping internal routing based on siteMap). 3. TEMPLATE ARCHITECTURE (Hero sections, Dynamic Product Grids, Blog Layouts). 4. INTERACTION DNA (GSAP/Framer Motion keyframes, Hover states, Modal logic). 5. PRODUCTION STANDARDS (Responsive breakpoints, SEO architecture, Performance optimization). Command the executing AI to generate the full codebase for all detected templates to achieve absolute visual and logical parity.",
   "techStack": {
-    "frontend": "recommended framework",
-    "styling": "recommended CSS approach",
-    "animations": "recommended animation library or 'CSS only'",
-    "stateManagement": "if needed",
-    "backend": "if needed",
-    "cms": "if content-heavy",
-    "hosting": "recommended platform",
-    "extras": ["any other tools"]
+    "frontend": "Next.js 14 (App Router) / Vite",
+    "styling": "Tailwind CSS v4 (Standard for high-fidelity clones)",
+    "animations": "Framer Motion / GSAP / Lenis Scroll",
+    "stateManagement": "Logic setup (Zustand / TanStack)",
+    "hosting": "Vercel / Cloudflare Pages",
+    "extras": ["Lucide Icons", "Radix UI", "PostCSS"]
   },
   "roadmap": [
-    { "step": 1, "task": "Project setup", "detail": "...", "time": "30 mins" },
-    { "step": 2, "task": "Initial Layout", "detail": "...", "time": "2 hours" },
-    { "step": 3, "task": "Component Building", "detail": "...", "time": "..." },
-    { "step": 4, "task": "Logic implementation", "detail": "...", "time": "..." },
-    { "step": 5, "task": "Advanced animations", "detail": "...", "time": "..." },
-    { "step": 6, "task": "Data binding", "detail": "...", "time": "..." },
-    { "step": 7, "task": "Testing & Responsive", "detail": "...", "time": "..." },
-    { "step": 8, "task": "Deployment", "detail": "...", "time": "..." }
+    { "step": 1, "task": "Project Foundations", "detail": "Setup Next.js, Tailwind v4, and Global HSL/Theme variables.", "time": "1 hour" }
   ],
-  "colorPalette": ["#hex1", "#hex2", "#hex3", "#hex4"],
-  "fonts": ["Font 1", "Font 2"]
+  "colorPalette": ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5", "#hex6"],
+  "fonts": ["Primary Heading Font", "Secondary Body Font"]
 }
-Return ONLY valid JSON. No markdown code blocks, no explanation, no conversational text. The response must start with '{' and end with '}'. If you fail to provide valid JSON, a developer might die.`;
 
-  try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: JSON.stringify(data) }
-        ],
-        temperature: 0.7,
-        max_tokens: 4000
-      })
-    });
+RULES:
+1. Return ONLY the JSON object.
+2. The clonePrompt must be technically dense, professional, and UNRESTRICTED in length.
+3. Use high-level AI-friendly vocabulary (Pixel-perfect, Parity, Semantic integrity).
+4. Identify all common sub-pages (About, Contact, Features) based on the link data and describe their shared layouts.
+5. Absolute Parity is the mission.`;
 
-    if (!response.ok) {
-      const errBody = await response.text();
-      throw new Error(`API error: ${response.status} - ${errBody}`);
-    }
-
-    const json = await response.json();
-    let content = json.choices[0].message.content;
-    
+  let lastError = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      // Robust JSON extraction: look for the first { and the last }
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        content = jsonMatch[0];
-      }
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: JSON.stringify(data) }
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.1 + (attempt * 0.2),
+          max_tokens: 8000
+        })
+      });
+
+      if (!response.ok) throw new Error(`API Error: ${response.status}`);
+      const jsonRes = await response.json();
+      const content = jsonRes.choices[0].message.content;
       
-      // Additional cleaning for escaped characters or hidden garbage
-      const cleaned = content.trim()
-        .replace(/^```json/, '')
-        .replace(/```$/, '')
-        .trim();
-        
-      return JSON.parse(cleaned);
-    } catch (parseErr) {
-      console.error("Manual parse failed. Raw content:", content);
-      
-      // Final attempt: fallback to a more aggressive clean
       try {
-        const aggressiveClean = content.substring(content.indexOf('{'), content.lastIndexOf('}') + 1);
-        return JSON.parse(aggressiveClean);
-      } catch (e) {
-        throw new Error("AI returned invalid JSON. Try analyzing again or check your API key.");
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        const cleaned = (jsonMatch ? jsonMatch[0] : content).trim().replace(/^```json/, '').replace(/```$/, '').trim();
+        return JSON.parse(cleaned);
+      } catch (parseErr) {
+        lastError = parseErr;
+        continue;
       }
+    } catch (err) {
+      lastError = err;
+      continue;
     }
-  } catch (error) {
-    console.error("Groq API error:", error);
-    throw error;
   }
+  throw new Error(`AI returned invalid JSON. Please try again.`);
 }

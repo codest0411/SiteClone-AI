@@ -1,15 +1,18 @@
 /**
- * UI Logic for the Side Panel
+ * UI Logic for the Side Panel (V3 Refined)
  */
 
 document.addEventListener("DOMContentLoaded", () => {
-  const analyzeBtn = document.getElementById("analyze-btn");
-  const refreshBtn = document.getElementById("refresh-btn");
-  const copyBtn = document.getElementById("copy-btn");
-  const urlEl = document.getElementById("current-url");
-  const statusMessage = document.getElementById("status-message");
-  const resultsArea = document.getElementById("results-area");
-  const loadingState = document.getElementById("loading-state");
+  const getEl = (id) => document.getElementById(id);
+
+  const analyzeBtn = getEl("analyze-btn");
+  const refreshBtn = getEl("refresh-btn");
+  const copyBtn = getEl("copy-btn");
+  const urlEl = getEl("current-url");
+  const statusMessage = getEl("status-message");
+  const resultsArea = getEl("results-area");
+  const copyAllBtn = getEl("copy-all-btn");
+  let lastResult = null;
 
   // Initialize URL display
   updateCurrentUrl();
@@ -18,60 +21,109 @@ document.addEventListener("DOMContentLoaded", () => {
   chrome.tabs.onActivated.addListener(updateCurrentUrl);
   chrome.tabs.onUpdated.addListener(updateCurrentUrl);
 
-  refreshBtn.addEventListener("click", () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.reload(tabs[0].id);
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", () => {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) chrome.tabs.reload(tabs[0].id);
+      });
     });
-  });
+  }
 
-  analyzeBtn.addEventListener("click", () => {
-    analyzeBtn.disabled = true;
-    showStatus("Analyzing website structure...", "info");
-    showLoading(true);
-    resultsArea.classList.add("hidden");
-
-    // 1. Get Page Data
-    chrome.runtime.sendMessage({ action: "GET_PAGE_DATA" }, (response) => {
-      if (response && response.error) {
-        showError(response.error);
-        resetUI();
-        return;
-      }
-
-      if (response && response.data) {
-        showStatus("Generating clone prompt with Llama 3.3...", "info");
-        
-        // 2. Generate Prompt via AI
-        chrome.runtime.sendMessage({ action: "GENERATE_PROMPT", data: response.data }, (aiResponse) => {
-          if (aiResponse && aiResponse.error) {
-            showError(aiResponse.error);
-            resetUI();
-            return;
-          }
-
-          if (aiResponse && aiResponse.result) {
-            renderResults(aiResponse.result);
-            hideStatus();
-            resultsArea.classList.remove("hidden");
-          }
+  if (analyzeBtn) {
+    analyzeBtn.addEventListener("click", () => {
+      analyzeBtn.disabled = true;
+      if (resultsArea) resultsArea.classList.add("hidden");
+      showStatus("Analyzing website structure...", "info");
+      
+      // 1. Get Page Data
+      chrome.runtime.sendMessage({ action: "GET_PAGE_DATA" }, (response) => {
+        if (response && response.error) {
+          showError(response.error);
           resetUI();
-        });
+          return;
+        }
+
+        if (response && response.data) {
+          showStatus("Generating clone prompt...", "info");
+          
+          // 2. Generate Prompt via AI
+          chrome.runtime.sendMessage({ action: "GENERATE_PROMPT", data: response.data }, (aiResponse) => {
+            if (aiResponse && aiResponse.error) {
+              showError(aiResponse.error);
+              resetUI();
+              return;
+            }
+
+            if (aiResponse && aiResponse.result) {
+              renderResults(aiResponse.result);
+              hideStatus();
+              if (resultsArea) resultsArea.classList.remove("hidden");
+            }
+            resetUI();
+          });
+        }
+      });
+    });
+  }
+
+  if (copyBtn) {
+    copyBtn.addEventListener("click", () => {
+      const promptText = getEl("clone-prompt-text");
+      if (promptText) {
+        copyToClipboard(promptText.innerText, copyBtn);
       }
     });
-  });
+  }
 
-  copyBtn.addEventListener("click", () => {
-    const text = document.getElementById("clone-prompt-text").innerText;
-    navigator.clipboard.writeText(text).then(() => {
-      const originalText = copyBtn.innerText;
-      copyBtn.innerText = "COPIED!";
-      setTimeout(() => copyBtn.innerText = originalText, 2000);
+  if (copyAllBtn) {
+    copyAllBtn.addEventListener("click", () => {
+      if (!lastResult) return;
+      
+      const formattedReport = `
+SITECLONE AI - RECONSTRUCTION REPORT
+------------------------------------
+🌐 SOURCE: ${urlEl.innerText}
+📊 SUMMARY:
+- Type: ${lastResult.summary.siteType}
+- Design Style: ${lastResult.summary.designStyle}
+- Complexity: ${lastResult.summary.complexity}
+- Build Time: ${lastResult.summary.estimatedBuildTime}
+
+📋 CLONE PROMPT (FOR AI RECONSTRUCTION):
+${lastResult.clonePrompt}
+
+⚙️ SUGGESTED TECH STACK:
+- Frontend: ${lastResult.techStack.frontend}
+- Styling: ${lastResult.techStack.styling}
+- Animations: ${lastResult.techStack.animations}
+- State: ${lastResult.techStack.stateManagement}
+- Hosting: ${lastResult.techStack.hosting}
+- Extras: ${(lastResult.techStack.extras || []).join(', ')}
+
+🗺️ IMPLEMENTATION ROADMAP:
+${lastResult.roadmap.map(s => `${s.step}. ${s.task}: ${s.detail} (${s.time})`).join('\n')}
+
+🎨 COLORS: ${(lastResult.colorPalette || []).join(' ')}
+🔤 FONTS: ${(lastResult.fonts || []).join(', ')}
+
+Generated by SiteClone AI
+------------------------------------`.trim();
+
+      copyToClipboard(formattedReport, copyAllBtn);
     });
-  });
+  }
+
+  function copyToClipboard(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      const originalText = btn.innerHTML;
+      btn.innerText = "COPIED!";
+      setTimeout(() => btn.innerHTML = originalText, 2000);
+    });
+  }
 
   function updateCurrentUrl() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs.length > 0 && tabs[0].url) {
+      if (tabs.length > 0 && tabs[0].url && urlEl) {
         try {
           const url = new URL(tabs[0].url);
           urlEl.innerText = url.hostname;
@@ -83,84 +135,97 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderResults(res) {
+    lastResult = res; // Store for copy-all
     // Summary
-    document.getElementById("site-type").innerText = res.summary.siteType;
-    document.getElementById("design-style").innerText = res.summary.designStyle;
-    document.getElementById("complexity").innerText = res.summary.complexity;
-    document.getElementById("build-time").innerText = res.summary.estimatedBuildTime;
+    const fields = {
+      'site-type': res.summary.siteType,
+      'design-style': res.summary.designStyle,
+      'complexity': res.summary.complexity,
+      'build-time': res.summary.estimatedBuildTime,
+      'clone-prompt-text': res.clonePrompt
+    };
 
-    // Prompt
-    document.getElementById("clone-prompt-text").innerText = res.clonePrompt;
+    Object.entries(fields).forEach(([id, val]) => {
+      const el = getEl(id);
+      if (el) el.innerText = val;
+    });
 
     // Tech Stack
-    const techContainer = document.getElementById("tech-stack-list");
-    techContainer.innerHTML = "";
-    const stack = res.techStack;
-    const items = [stack.frontend, stack.styling, stack.animations, stack.cms, stack.hosting, ...(stack.extras || [])];
-    items.filter(Boolean).forEach(item => {
-      const tag = document.createElement("span");
-      tag.className = "tech-tag";
-      tag.innerText = item;
-      techContainer.appendChild(tag);
-    });
+    const techContainer = getEl("tech-stack-list");
+    if (techContainer) {
+      techContainer.innerHTML = "";
+      const stack = res.techStack;
+      const items = [stack.frontend, stack.styling, stack.animations, stack.cms, stack.hosting, ...(stack.extras || [])];
+      items.filter(Boolean).forEach(item => {
+        const tag = document.createElement("span");
+        tag.className = "tech-tag";
+        tag.innerText = item;
+        techContainer.appendChild(tag);
+      });
+    }
 
     // Roadmap
-    const roadMapContainer = document.getElementById("roadmap-list");
-    roadMapContainer.innerHTML = "";
-    res.roadmap.forEach(step => {
-      const stepEl = document.createElement("div");
-      stepEl.className = "step-card";
-      stepEl.innerHTML = `
-        <div class="step-num">${step.step}</div>
-        <div class="step-info">
-          <h4>${step.task}</h4>
-          <p>${step.detail}</p>
-          <span class="step-time">${step.time}</span>
-        </div>
-      `;
-      roadMapContainer.appendChild(stepEl);
-    });
+    const roadMapContainer = getEl("roadmap-list");
+    if (roadMapContainer) {
+      roadMapContainer.innerHTML = "";
+      res.roadmap.forEach(step => {
+        const stepEl = document.createElement("div");
+        stepEl.className = "step-card";
+        stepEl.innerHTML = `
+          <div class="step-num">${step.step}</div>
+          <div class="step-info">
+            <h4>${step.task}</h4>
+            <p>${step.detail}</p>
+            <span class="step-time">${step.time}</span>
+          </div>
+        `;
+        roadMapContainer.appendChild(stepEl);
+      });
+    }
 
     // Colors
-    const palette = document.getElementById("color-palette");
-    palette.innerHTML = "";
-    (res.colorPalette || []).slice(0, 6).forEach(color => {
-      const swatch = document.createElement("div");
-      swatch.className = "swatch";
-      swatch.innerHTML = `
-        <div class="swatch-circle" style="background-color: ${color}"></div>
-        <span class="swatch-hex">${color}</span>
-      `;
-      palette.appendChild(swatch);
-    });
+    const palette = getEl("color-palette");
+    if (palette) {
+      palette.innerHTML = "";
+      (res.colorPalette || []).slice(0, 6).forEach(color => {
+        const swatch = document.createElement("div");
+        swatch.className = "swatch";
+        swatch.innerHTML = `
+          <div class="swatch-circle" style="background-color: ${color}"></div>
+          <span class="swatch-hex">${color}</span>
+        `;
+        palette.appendChild(swatch);
+      });
+    }
 
     // Fonts
-    const fontsContainer = document.getElementById("fonts-container");
-    fontsContainer.innerHTML = "";
-    (res.fonts || []).forEach(font => {
-      const tag = document.createElement("span");
-      tag.className = "tech-tag";
-      tag.innerText = font;
-      fontsContainer.appendChild(tag);
-    });
-
-    showLoading(false);
+    const fontsContainer = getEl("fonts-container");
+    if (fontsContainer) {
+      fontsContainer.innerHTML = "";
+      (res.fonts || []).forEach(font => {
+        const tag = document.createElement("span");
+        tag.className = "tech-tag";
+        tag.innerText = font;
+        fontsContainer.appendChild(tag);
+      });
+    }
   }
 
   function showStatus(msg, type) {
+    if (!statusMessage) return;
     statusMessage.innerText = msg;
     statusMessage.classList.remove("hidden", "status-error");
     if (type === "error") statusMessage.classList.add("status-error");
   }
 
   function showError(msg) {
+    if (!statusMessage) return;
     statusMessage.innerHTML = typeof msg === 'string' && msg.includes("options") ? 
-      `<span>${msg} <a href="#" id="open-options" style="color:#fff; text-decoration:underline;">Options Page</a></span>` : 
+      `<span>${msg} <a href="#" id="open-options" style="color:#6366f1; text-decoration:underline; font-weight:600;">Options Page</a></span>` : 
       msg;
     statusMessage.classList.remove("hidden");
-    statusMessage.classList.add("status-toast");
     
-    const openOptionsLink = document.getElementById("open-options");
+    const openOptionsLink = getEl("open-options");
     if (openOptionsLink) {
       openOptionsLink.addEventListener("click", (e) => {
         e.preventDefault();
@@ -170,20 +235,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function hideStatus() {
-    statusMessage.classList.add("hidden");
-  }
-
-  function showLoading(show) {
-    if (show) {
-      loadingState.classList.remove("hidden");
-      resultsArea.classList.add("hidden");
-    } else {
-      loadingState.classList.add("hidden");
-    }
+    if (statusMessage) statusMessage.classList.add("hidden");
   }
 
   function resetUI() {
-    analyzeBtn.disabled = false;
-    showLoading(false);
+    if (analyzeBtn) analyzeBtn.disabled = false;
   }
 });

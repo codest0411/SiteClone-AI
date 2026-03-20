@@ -29,16 +29,14 @@
     <!-- Message Area -->
     <div id="status-message" class="status-toast hidden"></div>
 
-    <!-- Loading Skeleton -->
-    <div id="loading-state" class="skeleton-area hidden">
-      <div class="skeleton" style="height: 100px; margin-bottom: 12px; border-radius: 16px;"></div>
-      <div class="skeleton" style="height: 200px; margin-bottom: 12px; border-radius: 16px;"></div>
-      <div class="skeleton" style="height: 150px; border-radius: 16px;"></div>
-    </div>
-
     <!-- Results Area -->
     <div id="results-area" class="results hidden">
-      
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+        <button id="copy-all-btn" class="primary-btn" style="width: auto; padding: 10px 20px; font-size: 13px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); box-shadow: none;">
+          <svg fill="currentColor" viewBox="0 0 24 24" height="14" width="14"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+          Copy Full Report
+        </button>
+      </div>
       <!-- Summary -->
       <section class="result-section">
         <h3>

@@ -1,138 +1,153 @@
 /**
  * Content script to analyze the webpage and extract DOM/CSS data.
+ * Enhanced for Whole-Site Architecture awareness.
  */
 
 function extractData() {
   const styles = window.getComputedStyle(document.body);
-  const colorPalette = [];
   const fonts = new Set();
   
-  // Basic info
+  // Extract all unique internal links to map architecture
+  const internalLinks = Array.from(document.querySelectorAll("a[href]"))
+    .map(a => a.getAttribute("href"))
+    .filter(href => {
+      if (!href) return false;
+      if (href.startsWith("/") || href.startsWith(window.location.origin)) return true;
+      return false;
+    })
+    .map(href => href.startsWith("/") ? window.location.origin + href : href);
+
+  const uniqueLinks = Array.from(new Set(internalLinks)).slice(0, 20); // Top 20 internal pages
+
+  // Detailed Section Extraction
+  const sections = Array.from(document.querySelectorAll("section, [class*='section'], [id*='section'], main > div")).slice(0, 15).map(s => {
+    return {
+      id: s.id || "",
+      className: s.className || "",
+      textSnippet: s.innerText.trim().substring(0, 100).replace(/\n/g, " "),
+      hasImage: !!s.querySelector("img"),
+      tag: s.tagName
+    };
+  });
+
   const data = {
     url: window.location.href,
+    origin: window.location.origin,
     title: document.title,
     metaDescription: document.querySelector('meta[name="description"]')?.content || "",
     
-    // Layout
-    layoutType: detectLayout(),
-    totalSections: document.querySelectorAll("section, div[id*='section'], div[class*='section']").length || 1,
-    hasHero: !!document.querySelector("header + section, .hero, #hero, [class*='hero-']"),
-    hasNavbar: !!document.querySelector("nav, .navbar, #navbar, header"),
-    hasFooter: !!document.querySelector("footer, .footer, #footer"),
-    hasSidebar: !!document.querySelector("aside, .sidebar, #sidebar"),
-    
-    // Visual
-    colorPalette: [],
-    fonts: [],
-    hasAnimations: hasWebAnimations(),
-    hasStickyElements: !!document.querySelector("[style*='position: sticky'], .sticky, #sticky"),
-    isResponsive: !!document.querySelector('meta[name="viewport"]'),
-    
-    // Components detected
-    components: {
-      navbar: !!document.querySelector("nav, .nav, .navbar"),
-      hero: !!document.querySelector(".hero, #hero, [class*='hero']"),
-      cards: !!document.querySelector(".card, [class*='card']"),
-      carousel: !!document.querySelector(".carousel, .swiper, .slick-slider"),
-      modal: !!document.querySelector(".modal, [class*='modal']"),
-      forms: !!document.querySelector("form"),
-      tables: !!document.querySelector("table"),
-      video: !!document.querySelector("video, iframe[src*='youtube'], iframe[src*='vimeo']"),
-      imageGallery: !!document.querySelector(".gallery, [class*='gallery']"),
-      testimonials: !!document.querySelector(".testimonial, [class*='testimonial']"),
-      pricing: !!document.querySelector(".pricing, [class*='pricing']"),
-      cta: !!document.querySelector("button, .btn, .cta, [class*='cta']"),
-      footer: !!document.querySelector("footer"),
+    // Site Map Architecture (Crucial for "Entire Site" logic)
+    siteArchitecture: {
+      totalInternalLinks: internalLinks.length,
+      topLinks: uniqueLinks,
+      navigationItems: Array.from(document.querySelectorAll("nav a, header a, footer a"))
+        .slice(0, 15)
+        .map(a => ({ text: a.innerText.trim(), href: a.href }))
+        .filter(n => n.text.length > 0)
+    },
+
+    // Detailed Layout
+    layout: {
+      type: detectLayout(),
+      sections: sections,
+      containerWidth: document.querySelector(".container, [class*='container']") ? "Fixed/Centered" : "Fluid",
+      gridPattern: !!document.querySelector("[class*='grid'], [style*='display: grid']") ? "Modern Grid" : "Traditional",
     },
     
-    // Content structure
-    headings: Array.from(document.querySelectorAll("h1, h2, h3")).slice(0, 10).map(h => ({ tag: h.tagName, text: h.innerText.trim() })),
-    navLinks: Array.from(document.querySelectorAll("nav a, header a")).slice(0, 10).map(a => a.innerText.trim()).filter(t => t.length > 0),
-    ctaButtons: Array.from(document.querySelectorAll("button, .btn, .button")).slice(0, 10).map(b => b.innerText.trim()).filter(t => t.length > 0),
-    imageCount: document.querySelectorAll("img").length,
+    // Components
+    components: {
+      navbar: !!document.querySelector("nav, .navbar, header"),
+      hero: !!document.querySelector("[class*='hero'], #hero"),
+      footer: !!document.querySelector("footer, .footer"),
+      forms: Array.from(document.querySelectorAll("form")).map(f => ({ 
+        id: f.id, 
+        inputCount: f.querySelectorAll("input, select, textarea").length 
+      })),
+      buttons: Array.from(document.querySelectorAll("button, .btn, .button")).slice(0, 8).map(b => b.innerText.trim())
+    },
     
-    // Tech hints
+    // Visual DNA
+    visuals: {
+      colorPalette: getDetailedColors(),
+      fonts: getDetailedFonts(),
+      isDarkTheme: isDarkTheme(),
+      hasAnimations: document.querySelectorAll("[class*='animate'], [style*='animation']").length > 5
+    },
+    
+    // Tech Stack Hints
     frameworks: detectFrameworks(),
     cssFramework: detectCSSFramework(),
   };
 
-  // Analyze colors and fonts
-  const allElements = Array.from(document.querySelectorAll("*")).slice(0, 500); // Sample first 500 elements for performance
-  const colorCounts = {};
-  
-  allElements.forEach(el => {
-    const s = window.getComputedStyle(el);
-    const bg = s.backgroundColor;
-    const color = s.color;
-    const font = s.fontFamily.split(",")[0].replace(/['"]/g, "").trim();
-    
-    if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") {
-      const hex = rgbToHex(bg);
-      colorCounts[hex] = (colorCounts[hex] || 0) + 1;
-    }
-    if (font) fonts.add(font);
-  });
-
-  data.colorPalette = Object.entries(colorCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 6)
-    .map(entry => entry[0]);
-    
-  data.fonts = Array.from(fonts).slice(0, 5);
-  
   return data;
 }
 
-function detectLayout() {
-  const bodyStyles = window.getComputedStyle(document.body);
-  if (bodyStyles.display === "grid") return "grid";
-  if (bodyStyles.display === "flex") return "flexbox";
-  const main = document.querySelector("main") || document.body;
-  const mainStyles = window.getComputedStyle(main);
-  if (mainStyles.display === "grid") return "grid";
-  if (mainStyles.display === "flex") return "flexbox";
-  return "mixed";
+function getDetailedColors() {
+  const colorCounts = {};
+  const elements = Array.from(document.querySelectorAll("*")).slice(0, 500);
+  elements.forEach(el => {
+    const s = window.getComputedStyle(el);
+    [s.backgroundColor, s.color].forEach(c => {
+      if (c && c !== "rgba(0, 0, 0, 0)" && c !== "transparent") {
+        const hex = rgbToHex(c);
+        colorCounts[hex] = (colorCounts[hex] || 0) + 1;
+      }
+    });
+  });
+  return Object.entries(colorCounts).sort((a,b) => b[1]-a[1]).slice(0, 8).map(e => e[0]);
 }
 
-function hasWebAnimations() {
-  return document.getAnimations().length > 0 || !!document.querySelector("[class*='animate'], [style*='animation']");
+function getDetailedFonts() {
+  const fonts = new Set();
+  const elements = Array.from(document.querySelectorAll("h1, h2, p, button")).slice(0, 20);
+  elements.forEach(el => {
+    const family = window.getComputedStyle(el).fontFamily.split(",")[0].replace(/['"]/g, "").trim();
+    if (family) fonts.add(family);
+  });
+  return Array.from(fonts);
+}
+
+function isDarkTheme() {
+  const bg = window.getComputedStyle(document.body).backgroundColor;
+  const rgb = bg.match(/\d+/g);
+  if (!rgb) return false;
+  const brightness = (parseInt(rgb[0]) * 299 + parseInt(rgb[1]) * 587 + parseInt(rgb[2]) * 114) / 1000;
+  return brightness < 128;
+}
+
+function detectLayout() {
+  const main = document.querySelector("main") || document.body;
+  const s = window.getComputedStyle(main);
+  if (s.display === "grid") return "CSS Grid";
+  if (s.display === "flex") return "Flexbox";
+  return "Standard Block";
 }
 
 function detectFrameworks() {
-  const frameworks = [];
-  if (window.__NEXT_DATA__) frameworks.push("Next.js");
-  if (window.React || document.querySelector("[data-reactroot]")) frameworks.push("React");
-  if (window.Vue || document.querySelector("[data-v-")) frameworks.push("Vue.js");
-  if (document.querySelector("[ng-app], [ng-version]")) frameworks.push("Angular");
-  if (window.Svelte || document.querySelector(".svelte-")) frameworks.push("Svelte");
-  return frameworks;
+  const fs = [];
+  if (window.__NEXT_DATA__) fs.push("Next.js");
+  if (window.React || document.querySelector("[data-reactroot]")) fs.push("React");
+  if (window.Vue || document.querySelector("[data-v-]")) fs.push("Vue.js");
+  if (document.querySelector("script[src*='wp-content']")) fs.push("WordPress");
+  if (document.querySelector("script[src*='shopify']")) fs.push("Shopify");
+  return fs;
 }
 
 function detectCSSFramework() {
-  const classes = document.body.className;
-  if (/tw-|text-|bg-|p-|m-/.test(classes)) return "Tailwind CSS";
-  if (document.querySelector("[class*='btn-'], [class*='container-fluid']")) return "Bootstrap";
-  if (document.querySelector("[class*='Mui']")) return "Material UI";
-  if (document.querySelector("[class*='ant-']")) return "Ant Design";
-  return "Native CSS / Custom";
+  const bodyClass = document.body.className;
+  if (/tw-|text-|bg-/.test(bodyClass)) return "Tailwind CSS";
+  if (document.querySelector("link[href*='bootstrap']")) return "Bootstrap";
+  return "Custom/Native";
 }
 
 function rgbToHex(rgb) {
-  if (!rgb) return "";
-  const match = rgb.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d+(\.\d+)?))?\)$/);
+  const match = rgb.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
   if (!match) return rgb;
-  const r = parseInt(match[1]);
-  const g = parseInt(match[2]);
-  const b = parseInt(match[3]);
-  return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+  return "#" + [match[1], match[2], match[3]].map(x => parseInt(x).toString(16).padStart(2, '0')).join('').toUpperCase();
 }
 
-// Listen for messages from background/panel
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "PING") {
-    sendResponse({ status: "alive" });
-    return true;
-  }
+  if (request.action === "PING") { sendResponse({ status: "alive" }); return true; }
   if (request.action === "EXTRACT_DATA") {
     sendResponse(extractData());
   }
